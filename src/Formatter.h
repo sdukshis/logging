@@ -3,6 +3,8 @@
 
 #include <string>
 #include <sstream>
+#include <chrono>
+#include <iomanip>
 
 #include "Message.h"
 
@@ -31,6 +33,10 @@ class Formatter {
 
     std::string format(const Message &msg) const {
         std::ostringstream stream;
+        std::time_t time = std::chrono::system_clock::to_time_t(msg.time);
+        stream << std::put_time(std::localtime(&time), "%F %T") << " ";
+        stream << msg.logger << ":";
+        stream << msg.file << ":" << msg.func << ":" << msg.line << " ";
         stream << msg.text;
         return stream.str();
     }

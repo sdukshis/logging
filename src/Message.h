@@ -8,11 +8,13 @@
 struct Message {
     using time_point = std::chrono::system_clock::time_point;
 
-    Message(const std::string &text_, time_point time_ = std::chrono::system_clock::now(),
+    Message(const std::string &logger_,
+            const std::string &text_, time_point time_ = std::chrono::system_clock::now(),
             const std::string &file_ = std::string(),
             const std::string &func_ = std::string(),
             std::size_t line_ = 0,
             std::size_t pid_ = 0, std::size_t tid_ = 0) :
+        logger{logger_},
         text{text_},
         time{time_},
         file{file_},
@@ -21,6 +23,7 @@ struct Message {
         pid{pid_},
         tid{tid_} { }
 
+    std::string logger;
     std::string text;
     time_point time;
     std::string file;
@@ -31,7 +34,8 @@ struct Message {
 };
 
 bool operator==(const Message &lhs, const Message &rhs) {
-    return lhs.text == rhs.text &&
+    return lhs.logger == rhs.logger &&
+           lhs.text == rhs.text &&
            lhs.file == rhs.file &&
            lhs.func == rhs.func &&
            lhs.line == rhs.line &&

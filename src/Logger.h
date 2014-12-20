@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <typeinfo>
 
 #include "Message.h"
 #include "Sink.h"
@@ -14,7 +15,7 @@ class Logger {
  public:
     Logger(const std::string &name) :
         name_{name},
-        logLevel_{LogLevel::info} { }
+        logLevel_{LogLevel::trace} { }
 
     Logger(const Logger &) = delete;
 
@@ -86,6 +87,8 @@ class Logger {
 
     LogLevel logLevel() const { return logLevel_; }
 
+    std::string name() const { return name_; }
+
  private:
     std::string name_;
     LogLevel logLevel_;
@@ -97,8 +100,27 @@ class Logger {
     if (logger.active(logLevel)) {              \
         std::ostringstream stream;              \
         stream << expr;                         \
-        logger.log(Message(stream.str()));      \
+        logger.log(Message(logger.name(), stream.str(),        \
+                           std::chrono::system_clock::now(),    \
+                           __FILE__, __PRETTY_FUNCTION__, __LINE__));      \
     }                                           \
 
+#define ENABLE_LOGGING(name) Logger &__logger__ = logging::getLogger(name);
+
+#define LOG_TRACE(expr) LOG(__logger__, Logger::LogLevel::trace, expr);
+#define LOG_DEBUG(expr) LOG(__logger__, Logger::LogLevel::debug, expr);
+#define LOG_WARN(expr) LOG(__logger__, Logger::LogLevel::warn, expr);
+#define LOG_INFO(expr) LOG(__logger__, Logger::LogLevel::info, expr);
+#define LOG_ERROR(expr) LOG(__logger__, Logger::LogLevel::error, expr);
+#define LOG_FATAL(expr) LOG(__logger__, Logger::LogLevel::fatal, expr);
+
+template<class Func, class... Args>
+auto log_and_invoke(Logger &logger, const char *func_name, const char *arg_names,
+                    Func &&func, Args... args) {
+    LOG(logger, Logger::LogLevel::trace, func_name << "(" << arg_names << ")");
+    return func(std::forward<Args>(args)...);
+}
+
+#define TRACE(func, ...) log_and_invoke(__logger__, #func, #__VA_ARGS__, func, __VA_ARGS__);
 
 #endif  // LOGGER_H
